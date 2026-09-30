@@ -1,0 +1,35 @@
+{
+    "name": "TVET MARA Admin",
+    "short_name": "TVET MARA Admin",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#002060",
+    "theme_color": "#002060",
+    "description": "TVET MARA Staff Attendance — Admin Dashboard",
+    "orientation": "any",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/Icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}
