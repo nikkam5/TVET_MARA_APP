@@ -92,6 +92,7 @@ class _StaffDashboardState extends State<StaffDashboard>
       _HomeTab(
         onOpenTasks: () => _switchToTab(1),
         onOpenAttendance: () => _switchToTab(2),
+        onOpenProfile: () => _switchToTab(3),
         onOpenReports: _openReports,
       ),
       const TasksScreen(),
@@ -131,11 +132,13 @@ class _StaffDashboardState extends State<StaffDashboard>
 class _HomeTab extends StatefulWidget {
   final VoidCallback onOpenTasks;
   final VoidCallback onOpenAttendance;
+  final VoidCallback onOpenProfile;
   final VoidCallback onOpenReports;
 
   const _HomeTab({
     required this.onOpenTasks,
     required this.onOpenAttendance,
+    required this.onOpenProfile,
     required this.onOpenReports,
   });
 
@@ -651,7 +654,7 @@ class _HomeTabState extends State<_HomeTab> {
             ),
           ),
           GestureDetector(
-            onTap: widget.onOpenTasks,
+            onTap: widget.onOpenProfile,
             child: Container(
               width: 48,
               height: 48,
