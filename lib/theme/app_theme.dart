@@ -24,7 +24,12 @@ class AppTheme {
 
   // --- 60%: dominant base -----------------------------------------------
   static const Color bgTop = Color(0xFFFFFFFF);
-  static const Color bgBottom = Color(0xFFF8F9FA);
+  // Single unified page canvas for the whole app (staff tabs, wrappers
+  // and admin shell alike): a clean cool near-white with no yellow tint,
+  // so Home / Tasks / Attendance / Profile all resolve to the exact same
+  // HEX (0xFFF4F6FB) as the admin canvas — no uneven mismatches.
+  static const Color pageBackground = Color(0xFFF4F6FB);
+  static const Color bgBottom = pageBackground;
 
   // Text — soft slate/off-black ink, easier on the eye than pure black.
   static const Color textPrimary = Color(0xFF1C2333);
@@ -73,15 +78,40 @@ class AppTheme {
   );
 
   // Structural navy header — top bars, the dashboard's quick-action
-  // banner, and other "primary tab" chrome. Three stops instead of two
-  // for more visible depth, still calm (navy, not red) so it doesn't
-  // strain the eyes across everyday use.
+  // banner, and other "primary tab" chrome. Leads with a fresher cobalt
+  // blue instead of dropping straight into the darkest navy stop, so the
+  // header reads as energetic/modern rather than heavy corporate navy —
+  // while still landing on brand navy, not a different color family.
   static const LinearGradient headerGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [maraBlue, navy, navyDeep],
-    stops: [0.0, 0.6, 1.0],
+    colors: [heroStart, heroMid, heroEnd],
+    stops: [0.0, 0.55, 1.0],
   );
+
+  // --- 2026 redesign: deep indigo/violet hero header -----------------
+  // Matches the new staff-app mockups (Home/Tasks/Attendance/Profile) —
+  // a darker, more premium indigo-to-violet wash instead of the old
+  // brighter cobalt-to-navy header. Reusing `headerGradient` above means
+  // every screen that already builds its chrome from that token (admin
+  // sidebar/header, login, report generator) picks up the new look for
+  // free, without needing each of those files touched individually.
+  static const Color heroStart = Color(0xFF1B1240);
+  static const Color heroMid = Color(0xFF2A1B5E);
+  static const Color heroEnd = Color(0xFF33207A);
+
+  static const LinearGradient heroGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [heroStart, heroMid, heroEnd],
+  );
+
+  // Success green — live "Check in / Check out" CTA, Present badges,
+  // on-duty dot. Distinct from the muted MARA red, which stays reserved
+  // for critical/late/absent states only.
+  static const Color success = Color(0xFF1FAA59);
+  static const Color successDeep = Color(0xFF158245);
+  static const Color successSoft = Color(0xFFE3F8EC);
 
   // Decorative badge/highlight gradient — navy into gold, kept out of the
   // red accent family entirely since these spots (announcement icons,
@@ -159,7 +189,7 @@ class AppTheme {
 
   // --- Glassmorphism -------------------------------------------------
   // A true frosted-glass look (paired with BackdropFilter blur in
-  // GlassCard/GlassSurface — see widgets/glass_card.dart): a translucent
+  // Shared card/panel decoration: a translucent
   // tinted fill, a hairline light border to catch the "edge" light hitting
   // glass would have, and a soft outer glow instead of a flat shadow.
 
@@ -176,7 +206,10 @@ class AppTheme {
     return BoxDecoration(
       color: tint.withValues(alpha: tintOpacity),
       borderRadius: BorderRadius.circular(radius),
-      border: Border.all(color: Colors.white.withValues(alpha: 0.6), width: 1.2),
+      border: Border.all(
+        color: Colors.white.withValues(alpha: 0.6),
+        width: 1.2,
+      ),
       boxShadow: [
         BoxShadow(
           color: glow.withValues(alpha: glowOpacity),
@@ -200,7 +233,10 @@ class AppTheme {
     return BoxDecoration(
       color: Colors.white.withValues(alpha: tintOpacity),
       borderRadius: BorderRadius.circular(radius),
-      border: Border.all(color: borderTint.withValues(alpha: borderOpacity), width: 1.2),
+      border: Border.all(
+        color: borderTint.withValues(alpha: borderOpacity),
+        width: 1.2,
+      ),
       boxShadow: [
         BoxShadow(
           color: gold.withValues(alpha: 0.10),

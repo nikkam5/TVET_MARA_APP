@@ -35,6 +35,7 @@ coverage/
 
 # Sensitive / secrets - never push to GitHub
 .env
+.env.*
 *.env
 android/key.properties
 **/android/key.properties
@@ -44,9 +45,8 @@ android/key.properties
 *.pem
 *.mobileprovision
 
-# Local UI backup - ignore for now, push stable code first
+# Local teammate UI reference
 tvet_app_redisegine11/
-vet_app_redisegine11/
 
 # Symbolication related
 app.*.symbols

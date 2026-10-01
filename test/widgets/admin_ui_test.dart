@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tvet_staff_app/widgets/admin_ui.dart';
+import 'package:tvet_staff_app/widgets/admin/admin_ui.dart';
 
 void main() {
   for (final width in [375.0, 1440.0]) {

@@ -78,6 +78,8 @@ class _LoginPageState extends State<LoginPage> {
         'invalid_credentials' =>
           'The email or password is incorrect. Please try again.',
         'email_not_confirmed' => 'Please confirm your email before signing in.',
+        'account_inactive' =>
+          'Your account is inactive. Contact your administrator.',
         'over_request_rate_limit' =>
           'Too many attempts. Please wait and try again.',
         _ => 'Unable to sign in. Check your details and try again.',
@@ -102,215 +104,219 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.bgBottom,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 460),
-              child: Container(
-                padding: const EdgeInsets.all(24),
-                decoration: AppTheme.glassCard(radius: 24),
-                child: AutofillGroup(
-                  child: Form(
-                    key: _formKey,
-                    autovalidateMode: AutovalidateMode.onUserInteraction,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Image.asset(
-                          'assets/images/tvetmara_logo.png',
-                          height: 80,
-                          semanticLabel: 'TVET MARA',
-                        ),
-                        const SizedBox(height: 30),
-
-                        const Text(
-                          "Welcome back",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF002060),
+      backgroundColor: AppTheme.navyDeep,
+      body: _LoginBackdrop(
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 460),
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: AppTheme.glassCard(radius: 24),
+                  child: AutofillGroup(
+                    child: Form(
+                      key: _formKey,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            'assets/images/tvetmara_logo.png',
+                            height: 80,
+                            semanticLabel: 'TVET MARA',
                           ),
-                        ),
-                        Text(
-                          "Staff Management System",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        const SizedBox(height: 40),
+                          const SizedBox(height: 30),
 
-                        // Email Text Field
-                        TextFormField(
-                          controller: _emailController,
-                          enabled: !_isLoading,
-                          keyboardType: TextInputType.emailAddress,
-                          textInputAction: TextInputAction.next,
-                          autofillHints: const [AutofillHints.username],
-                          autocorrect: false,
-                          enableSuggestions: false,
-                          decoration: InputDecoration(
-                            labelText: "Email address",
-                            errorMaxLines: 3,
-                            prefixIcon: const Icon(
-                              Icons.person,
+                          const Text(
+                            "Staff Management System",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
                               color: Color(0xFF002060),
                             ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(15),
+                          ),
+                          Text(
+                            "TVET MARA · Sign in to your account",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey[600],
                             ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(15),
-                              borderSide: const BorderSide(
+                          ),
+                          const SizedBox(height: 40),
+
+                          // Email Text Field
+                          TextFormField(
+                            controller: _emailController,
+                            enabled: !_isLoading,
+                            keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.next,
+                            autofillHints: const [AutofillHints.username],
+                            autocorrect: false,
+                            enableSuggestions: false,
+                            decoration: InputDecoration(
+                              labelText: "Email address",
+                              errorMaxLines: 3,
+                              prefixIcon: const Icon(
+                                Icons.person,
                                 color: Color(0xFF002060),
-                                width: 2,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF002060),
+                                  width: 2,
+                                ),
                               ),
                             ),
+                            validator: (value) {
+                              final email = value?.trim() ?? '';
+                              if (email.isEmpty) {
+                                return 'Please enter your email address';
+                              }
+                              if (!RegExp(
+                                r'^[^\s@]+@[^\s@]+\.[^\s@]+$',
+                              ).hasMatch(email)) {
+                                return 'Please enter a valid email address';
+                              }
+                              return null;
+                            },
                           ),
-                          validator: (value) {
-                            final email = value?.trim() ?? '';
-                            if (email.isEmpty) {
-                              return 'Please enter your email address';
-                            }
-                            if (!RegExp(
-                              r'^[^\s@]+@[^\s@]+\.[^\s@]+$',
-                            ).hasMatch(email)) {
-                              return 'Please enter a valid email address';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 20),
+                          const SizedBox(height: 20),
 
-                        // Password Text Field
-                        TextFormField(
-                          controller: _passwordController,
-                          enabled: !_isLoading,
-                          textInputAction: TextInputAction.done,
-                          autofillHints: const [AutofillHints.password],
-                          autocorrect: false,
-                          enableSuggestions: false,
-                          onFieldSubmitted: (_) => _handleLogin(),
-                          obscureText: _obscurePassword,
-                          decoration: InputDecoration(
-                            labelText: "Password",
-                            errorMaxLines: 3,
-                            prefixIcon: const Icon(
-                              Icons.lock,
-                              color: Color(0xFF002060),
-                            ),
-                            suffixIcon: IconButton(
-                              tooltip: _obscurePassword
-                                  ? 'Show password'
-                                  : 'Hide password',
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
-                                color: Colors.grey,
-                              ),
-                              onPressed: _isLoading
-                                  ? null
-                                  : () {
-                                      setState(() {
-                                        _obscurePassword = !_obscurePassword;
-                                      });
-                                    },
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(15),
-                              borderSide: const BorderSide(
+                          // Password Text Field
+                          TextFormField(
+                            controller: _passwordController,
+                            enabled: !_isLoading,
+                            textInputAction: TextInputAction.done,
+                            autofillHints: const [AutofillHints.password],
+                            autocorrect: false,
+                            enableSuggestions: false,
+                            onFieldSubmitted: (_) => _handleLogin(),
+                            obscureText: _obscurePassword,
+                            decoration: InputDecoration(
+                              labelText: "Password",
+                              errorMaxLines: 3,
+                              prefixIcon: const Icon(
+                                Icons.lock,
                                 color: Color(0xFF002060),
-                                width: 2,
+                              ),
+                              suffixIcon: IconButton(
+                                tooltip: _obscurePassword
+                                    ? 'Show password'
+                                    : 'Hide password',
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  color: Colors.grey,
+                                ),
+                                onPressed: _isLoading
+                                    ? null
+                                    : () {
+                                        setState(() {
+                                          _obscurePassword = !_obscurePassword;
+                                        });
+                                      },
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF002060),
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                            validator: (value) => value == null || value.isEmpty
+                                ? "Please enter your password"
+                                : null,
+                          ),
+                          const SizedBox(height: 10),
+
+                          // Forgot Password
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: _isLoading ? null : _showPasswordHelp,
+                              child: Text(
+                                "Forgot Password?",
+                                style: TextStyle(color: AppTheme.maraRed),
                               ),
                             ),
                           ),
-                          validator: (value) => value == null || value.isEmpty
-                              ? "Please enter your password"
-                              : null,
-                        ),
-                        const SizedBox(height: 10),
+                          const SizedBox(height: 20),
 
-                        // Forgot Password
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: _isLoading ? null : _showPasswordHelp,
-                            child: Text(
-                              "Forgot Password?",
-                              style: TextStyle(color: AppTheme.maraRed),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-
-                        // Login Button — navy gradient with a gold underline
-                        // accent below, nodding to the brand's gold trim.
-                        SizedBox(
-                          width: double.infinity,
-                          height: 55,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: AppTheme.headerGradient,
-                              borderRadius: BorderRadius.circular(15),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppTheme.navy.withValues(alpha: 0.35),
-                                  blurRadius: 14,
-                                  offset: const Offset(0, 6),
-                                ),
-                              ],
-                            ),
-                            child: ElevatedButton(
-                              onPressed: _isLoading ? null : _handleLogin,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                shadowColor: Colors.transparent,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(15),
-                                ),
-                                elevation: 0,
-                              ),
-                              child: _isLoading
-                                  ? const SizedBox(
-                                      width: 22,
-                                      height: 22,
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 2,
-                                        semanticsLabel: 'Signing in',
-                                      ),
-                                    )
-                                  : const Text(
-                                      "Sign in",
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                        letterSpacing: 0.5,
-                                      ),
+                          // Login Button — navy gradient with a gold underline
+                          // accent below, nodding to the brand's gold trim.
+                          SizedBox(
+                            width: double.infinity,
+                            height: 55,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: AppTheme.headerGradient,
+                                borderRadius: BorderRadius.circular(15),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppTheme.navy.withValues(
+                                      alpha: 0.35,
                                     ),
+                                    blurRadius: 14,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              child: ElevatedButton(
+                                onPressed: _isLoading ? null : _handleLogin,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  shadowColor: Colors.transparent,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(15),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                child: _isLoading
+                                    ? const SizedBox(
+                                        width: 22,
+                                        height: 22,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2,
+                                          semanticsLabel: 'Signing in',
+                                        ),
+                                      )
+                                    : const Text(
+                                        "Sign in",
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        Container(
-                          height: 3,
-                          width: 48,
-                          decoration: BoxDecoration(
-                            gradient: AppTheme.goldGradient,
-                            borderRadius: BorderRadius.circular(2),
+                          const SizedBox(height: 12),
+                          Container(
+                            height: 3,
+                            width: 48,
+                            decoration: BoxDecoration(
+                              gradient: AppTheme.goldGradient,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -321,4 +327,61 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
+}
+
+/// Deep navy and gold backdrop from the teammate's glass login design.
+class _LoginBackdrop extends StatelessWidget {
+  const _LoginBackdrop({required this.child});
+  final Widget child;
+  @override
+  Widget build(BuildContext context) => Stack(
+    children: [
+      Positioned.fill(
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [AppTheme.navyDeep, AppTheme.navy, AppTheme.heroEnd],
+            ),
+          ),
+        ),
+      ),
+      Positioned(
+        top: -100,
+        right: -80,
+        child: Container(
+          width: 340,
+          height: 340,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RadialGradient(
+              colors: [
+                AppTheme.gold.withValues(alpha: 0.22),
+                Colors.transparent,
+              ],
+            ),
+          ),
+        ),
+      ),
+      Positioned(
+        bottom: -140,
+        left: -100,
+        child: Container(
+          width: 400,
+          height: 400,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RadialGradient(
+              colors: [
+                AppTheme.maraBlue.withValues(alpha: 0.35),
+                Colors.transparent,
+              ],
+            ),
+          ),
+        ),
+      ),
+      child,
+    ],
+  );
 }

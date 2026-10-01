@@ -3,8 +3,9 @@ import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
-import '../models/attendance_report.dart';
+import '../../models/attendance_report.dart';
 
 class AttendanceReportPdfService {
   AttendanceReportPdfService._();
@@ -13,7 +14,13 @@ class AttendanceReportPdfService {
     required List<StaffAttendanceReport> reports,
     required String periodLabel,
   }) async {
+    final regular = await rootBundle.load('assets/fonts/OpenSans-Regular.ttf');
+    final bold = await rootBundle.load('assets/fonts/OpenSans-Bold.ttf');
     final document = pw.Document(
+      theme: pw.ThemeData.withFont(
+        base: pw.Font.ttf(regular),
+        bold: pw.Font.ttf(bold),
+      ),
       title: 'TVET MARA Attendance Report - $periodLabel',
       author: 'TVET MARA Staff App',
     );
@@ -133,13 +140,13 @@ class AttendanceReportPdfService {
     return document.save();
   }
 
-  static Future<void> share({
+  static Future<bool> share({
     required List<StaffAttendanceReport> reports,
     required String periodLabel,
   }) async {
     final bytes = await build(reports: reports, periodLabel: periodLabel);
     final safePeriod = periodLabel.replaceAll(RegExp(r'[^A-Za-z0-9-]+'), '_');
-    await Printing.sharePdf(
+    return Printing.sharePdf(
       bytes: bytes,
       filename: 'attendance_$safePeriod.pdf',
     );
@@ -179,7 +186,7 @@ class AttendanceReportPdfService {
           crossAxisAlignment: pw.CrossAxisAlignment.end,
           children: [
             pw.Text(
-              'Six-Month Attendance Report',
+              'Attendance Report',
               style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
             ),
             pw.Text(

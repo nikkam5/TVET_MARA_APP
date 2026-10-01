@@ -4,14 +4,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class AuthService {
   AuthService._();
 
-  static final SupabaseClient _client = Supabase.instance.client;
+  static SupabaseClient get _client => Supabase.instance.client;
 
-  static Stream<AuthState> get authStateChanges =>
-      _client.auth.onAuthStateChange;
-
-  static Session? get currentSession => _client.auth.currentSession;
   static User? get currentUser => _client.auth.currentUser;
-  static bool get isLoggedIn => currentUser != null;
 
   /// Sign in with email and password. Throws [AuthException] on failure.
   static Future<AuthResponse> signIn({
@@ -41,6 +36,19 @@ class AuthService {
   /// Convenience: returns the role string ('staff' | 'admin') or 'staff'.
   static Future<String> getCurrentRole() async {
     final profile = await getCurrentProfile();
-    return (profile?['role'] as String?) ?? 'staff';
+    if (profile == null) {
+      await signOut();
+      throw const AuthException(
+        'Staff profile not found. Contact your administrator.',
+      );
+    }
+    if (profile['is_active'] != true) {
+      await signOut();
+      throw const AuthException(
+        'Your account is inactive. Contact your administrator.',
+        code: 'account_inactive',
+      );
+    }
+    return (profile['role'] as String?) ?? 'staff';
   }
 }

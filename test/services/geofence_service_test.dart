@@ -1,10 +1,5 @@
-// Smoke tests for the app's pure geofence matching logic.
-//
-// The default Flutter counter template test was removed — it expected the
-// old counter UI which no longer exists. These tests verify the zone
-// matching logic that powers the punchcard's location meter, including the
-// regression where a nearby small zone shadowed a larger distant zone that
-// actually contained the user.
+// Tests for geofence matching, including the regression where a nearby
+// small zone shadowed a larger distant zone that contained the user.
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';

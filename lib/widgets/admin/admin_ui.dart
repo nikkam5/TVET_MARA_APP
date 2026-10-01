@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 class AdminUi {
   AdminUi._();
 
-  static const background = Color(0xFFF7F9FC);
-  static const ink = Color(0xFF182539);
-  static const muted = Color(0xFF718096);
-  static const navy = Color(0xFF15345B);
-  static const border = Color(0xFFE7ECF3);
+  static const background = Color(0xFFF4F6FB);
+  static const ink = Color(0xFF0F172A);
+  static const muted = Color(0xFF64748B);
+  static const navy = Color(0xFF002060);
+  static const border = Color(0xFFE2E8F0);
   static const lavender = Color(0xFFF2F3FF);
   static const mist = Color(0xFFEFF8F7);
   static const success = Color(0xFF21836B);
@@ -119,6 +119,7 @@ class AdminPage extends StatelessWidget {
   final Widget body;
   final Widget? action;
   final double maxWidth;
+  final bool embedded;
   const AdminPage({
     super.key,
     required this.title,
@@ -126,66 +127,93 @@ class AdminPage extends StatelessWidget {
     required this.body,
     this.action,
     this.maxWidth = 1280,
+    this.embedded = false,
   });
 
   @override
-  Widget build(BuildContext context) => Theme(
-    data: AdminUi.theme(context),
-    child: Scaffold(
-      backgroundColor: AdminUi.background,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        foregroundColor: AdminUi.ink,
-        elevation: 0,
-        toolbarHeight: 68,
-        title: Row(
-          children: [
-            Image.asset(
-              'assets/images/tvetmara_logo.png',
-              width: 100,
-              height: 34,
-              semanticLabel: 'TVET MARA',
-            ),
-            const SizedBox(width: 20),
-            const Expanded(
-              child: Text(
-                'Admin workspace',
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AdminUi.muted,
-                  fontWeight: FontWeight.w500,
-                ),
+  Widget build(BuildContext context) {
+    final content = SafeArea(
+      top: false,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          child: Column(
+            children: [
+              AdminPageHeading(
+                title: title,
+                subtitle: subtitle,
+                action: action,
               ),
-            ),
-          ],
-        ),
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(height: 1, color: AdminUi.border),
+              Expanded(child: body),
+            ],
+          ),
         ),
       ),
-      body: SafeArea(
-        top: false,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxWidth),
-            child: Column(
-              children: [
-                AdminPageHeading(
-                  title: title,
-                  subtitle: subtitle,
-                  action: action,
+    );
+    if (embedded) {
+      return Theme(
+        data: AdminUi.theme(context),
+        child: Material(color: AdminUi.background, child: content),
+      );
+    }
+    return Theme(
+      data: AdminUi.theme(context),
+      child: Scaffold(
+        backgroundColor: AdminUi.background,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.transparent,
+          foregroundColor: AdminUi.ink,
+          elevation: 0,
+          toolbarHeight: 68,
+          title: Row(
+            children: [
+              Image.asset(
+                'assets/images/tvetmara_logo.png',
+                width: 100,
+                height: 34,
+                semanticLabel: 'TVET MARA',
+              ),
+              const SizedBox(width: 20),
+              const Expanded(
+                child: Text(
+                  'Admin workspace',
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AdminUi.muted,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-                Expanded(child: body),
-              ],
+              ),
+            ],
+          ),
+          bottom: const PreferredSize(
+            preferredSize: Size.fromHeight(1),
+            child: Divider(height: 1, color: AdminUi.border),
+          ),
+        ),
+        body: SafeArea(
+          top: false,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maxWidth),
+              child: Column(
+                children: [
+                  AdminPageHeading(
+                    title: title,
+                    subtitle: subtitle,
+                    action: action,
+                  ),
+                  Expanded(child: body),
+                ],
+              ),
             ),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class AdminPageHeading extends StatelessWidget {

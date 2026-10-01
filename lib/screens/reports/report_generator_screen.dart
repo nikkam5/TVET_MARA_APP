@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 
 import '../../models/attendance_report.dart';
-import '../../services/attendance_report_pdf_service.dart';
+import '../../services/reports/attendance_report_pdf_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/database_service.dart';
-import '../../widgets/admin_ui.dart';
+import '../../widgets/admin/admin_ui.dart';
 
 class ReportGeneratorScreen extends StatefulWidget {
   final bool adminMode;
   final bool showAppBar;
+  final ReportPeriod? initialPeriod;
 
   const ReportGeneratorScreen({
     super.key,
     this.adminMode = false,
     this.showAppBar = true,
+    this.initialPeriod,
   });
 
   @override
@@ -21,7 +23,7 @@ class ReportGeneratorScreen extends StatefulWidget {
 }
 
 class _ReportGeneratorScreenState extends State<ReportGeneratorScreen> {
-  final _periods = ReportPeriod.recent();
+  late final List<ReportPeriod> _periods;
   List<Map<String, dynamic>> _staff = [];
   List<Map<String, dynamic>> _departments = [];
   List<StaffAttendanceReport> _reports = [];
@@ -36,6 +38,15 @@ class _ReportGeneratorScreenState extends State<ReportGeneratorScreen> {
   @override
   void initState() {
     super.initState();
+    _periods = [
+      if (widget.initialPeriod != null) widget.initialPeriod!,
+      ...ReportPeriod.recent().where(
+        (period) =>
+            widget.initialPeriod == null ||
+            period.start != widget.initialPeriod!.start ||
+            period.end != widget.initialPeriod!.end,
+      ),
+    ];
     _period = _periods.first;
     _loadFilters();
   }
@@ -79,6 +90,7 @@ class _ReportGeneratorScreenState extends State<ReportGeneratorScreen> {
   }).toList();
 
   Future<void> _generate() async {
+    if (_generating) return;
     final selected = _filteredStaff;
     if (selected.isEmpty) {
       setState(() {
@@ -280,14 +292,17 @@ class _ReportGeneratorScreenState extends State<ReportGeneratorScreen> {
                     ),
                   ),
                 ],
-                onChanged: (value) => setState(() {
-                  _departmentId = value;
-                  _staffId = null;
-                  _reports = [];
-                }),
+                onChanged: _generating
+                    ? null
+                    : (value) => setState(() {
+                        _departmentId = value;
+                        _staffId = null;
+                        _reports = [];
+                      }),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String?>(
+                key: ValueKey(_departmentId),
                 isExpanded: true,
                 initialValue: _staffId,
                 decoration: const InputDecoration(
@@ -306,10 +321,12 @@ class _ReportGeneratorScreenState extends State<ReportGeneratorScreen> {
                     ),
                   ),
                 ],
-                onChanged: (value) => setState(() {
-                  _staffId = value;
-                  _reports = [];
-                }),
+                onChanged: _generating
+                    ? null
+                    : (value) => setState(() {
+                        _staffId = value;
+                        _reports = [];
+                      }),
               ),
               const SizedBox(height: 12),
             ],
@@ -317,7 +334,7 @@ class _ReportGeneratorScreenState extends State<ReportGeneratorScreen> {
               isExpanded: true,
               initialValue: _period,
               decoration: const InputDecoration(
-                labelText: 'Six-month period',
+                labelText: 'Reporting period',
                 border: OutlineInputBorder(),
               ),
               items: _periods
@@ -328,10 +345,12 @@ class _ReportGeneratorScreenState extends State<ReportGeneratorScreen> {
                     ),
                   )
                   .toList(),
-              onChanged: (period) => setState(() {
-                if (period != null) _period = period;
-                _reports = [];
-              }),
+              onChanged: _generating
+                  ? null
+                  : (period) => setState(() {
+                      if (period != null) _period = period;
+                      _reports = [];
+                    }),
             ),
             const SizedBox(height: 12),
             SizedBox(

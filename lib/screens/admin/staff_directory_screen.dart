@@ -6,7 +6,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../config/app_config.dart';
 import '../../services/database_service.dart';
 import '../../services/presence_service.dart';
-import '../../widgets/admin_ui.dart';
+import '../../widgets/admin/admin_ui.dart';
+import '../../widgets/admin/staff_directory_card.dart';
+import 'staff_report_preview.dart';
 
 // =====================================================================
 // SLIDE-IN TOAST — small pill with ✓ (success) or ✗ (fail) icon that
@@ -113,13 +115,6 @@ class _SlideToastState extends State<SlideToast>
 // PresenceService.onlineThreshold (see presence_service.dart).
 // =====================================================================
 
-/// Short label for a card: "Online now", "5m ago", "Never signed in".
-String _presenceLabel(DateTime? lastSeen) {
-  if (lastSeen == null) return 'Never signed in';
-  if (PresenceService.isOnline(lastSeen)) return 'Online now';
-  return 'Last online ${_timeAgo(lastSeen)}';
-}
-
 /// Longer label for the detail screen, includes the exact date/time.
 String _presenceLabelLong(DateTime? lastSeen) {
   if (lastSeen == null) return 'Never signed in';
@@ -152,7 +147,11 @@ class StaffDirectoryScreen extends StatefulWidget {
   /// blocked once the limit is reached.
   static const int maxStaffLimit = 255;
 
-  const StaffDirectoryScreen({super.key});
+  /// Monotonic token from the admin shell: when the dashboard increments
+  /// this, the directory auto-opens the Add Staff form. `0` means no request.
+  final int addStaffRequest;
+
+  const StaffDirectoryScreen({super.key, this.addStaffRequest = 0});
 
   @override
   State<StaffDirectoryScreen> createState() => _StaffDirectoryScreenState();
@@ -207,6 +206,24 @@ class _StaffDirectoryScreenState extends State<StaffDirectoryScreen> {
     _presenceTicker = Timer.periodic(const Duration(seconds: 30), (_) {
       if (mounted) setState(() {});
     });
+    if (widget.addStaffRequest > 0) _scheduleAddForm();
+  }
+
+  void _scheduleAddForm() {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (_isLoading) await _loadData();
+      if (mounted && _error == null) _openAddForm();
+    });
+  }
+
+  @override
+  void didUpdateWidget(StaffDirectoryScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Admin shell requested Add Staff via the incrementing token.
+    if (widget.addStaffRequest != oldWidget.addStaffRequest &&
+        widget.addStaffRequest != 0) {
+      _scheduleAddForm();
+    }
   }
 
   @override
@@ -323,13 +340,14 @@ class _StaffDirectoryScreenState extends State<StaffDirectoryScreen> {
   @override
   Widget build(BuildContext context) {
     return AdminPage(
-      title: 'Staff directory',
+      embedded: true,
+      title: 'All Staff',
       subtitle:
           'Your people, in one place. Manage profiles, departments and account access.',
       action: FilledButton.icon(
         onPressed: _openAddForm,
         icon: const Icon(Icons.add_rounded, size: 18),
-        label: const Text('Add staff'),
+        label: const Text('Add Staff'),
       ),
       body: RefreshIndicator(
         onRefresh: _loadData,
@@ -623,287 +641,29 @@ class _StaffDirectoryScreenState extends State<StaffDirectoryScreen> {
 
   Widget _staffTable() {
     final staff = _filteredStaff;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-      child: Container(
-        clipBehavior: Clip.antiAlias,
-        decoration: AdminUi.panel(),
-        child: LayoutBuilder(
-          builder: (context, constraints) => SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minWidth: constraints.maxWidth),
-              child: DataTable(
-                showCheckboxColumn: false,
-                headingRowHeight: 50,
-                dataRowMinHeight: 80,
-                dataRowMaxHeight: 80,
-                horizontalMargin: 24,
-                columnSpacing: 28,
-                columns: const [
-                  DataColumn(label: Text('STAFF MEMBER')),
-                  DataColumn(label: Text('STAFF ID')),
-                  DataColumn(label: Text('DEPARTMENT')),
-                  DataColumn(label: Text('STATUS')),
-                  DataColumn(label: Text('LAST ACTIVE')),
-                ],
-                rows: staff.map((person) {
-                  final name = person['full_name'] as String? ?? 'Unknown';
-                  final active = person['is_active'] as bool? ?? true;
-                  final seen = PresenceService.parseLastSeen(
-                    person['last_seen'],
-                  );
-                  return DataRow(
-                    onSelectChanged: (_) => _openDetail(person),
-                    cells: [
-                      DataCell(
-                        SizedBox(
-                          width: 230,
-                          child: Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 19,
-                                backgroundColor: AdminUi.background,
-                                child: Text(
-                                  name.isEmpty ? '?' : name[0].toUpperCase(),
-                                  style: const TextStyle(
-                                    color: AdminUi.navy,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      name,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      person['email'] as String? ?? '—',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: AdminUi.muted,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      DataCell(Text(person['staff_number'] as String? ?? '—')),
-                      DataCell(
-                        SizedBox(
-                          width: 170,
-                          child: Text(
-                            person['departments']?['name'] as String? ?? '—',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ),
-                      DataCell(
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: active
-                                ? const Color(0xFFEAF5F0)
-                                : AdminUi.background,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            active ? 'Active' : 'Inactive',
-                            style: TextStyle(
-                              color: active ? AdminUi.success : AdminUi.muted,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ),
-                      DataCell(
-                        Text(
-                          _presenceLabel(seen),
-                          style: TextStyle(
-                            color: PresenceService.isOnline(seen)
-                                ? AdminUi.success
-                                : AdminUi.muted,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
+    return LayoutBuilder(
+      builder: (context, constraints) => GridView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+        physics: const AlwaysScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: constraints.maxWidth >= 1200 ? 3 : 2,
+          mainAxisExtent:
+              340 * MediaQuery.textScalerOf(context).scale(1).clamp(1, 1.6),
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
         ),
+        itemCount: staff.length,
+        itemBuilder: (_, index) => _staffCard(staff[index]),
       ),
     );
   }
 
   Widget _staffCard(Map<String, dynamic> staff) {
-    final name = (staff['full_name'] as String?) ?? 'Unknown';
-    final staffNum = (staff['staff_number'] as String?) ?? '—';
-    final position = (staff['position'] as String?) ?? '—';
-    final grade = (staff['staff_grade'] as String?) ?? '—';
-    final employmentStatus = (staff['employment_status'] as String?) ?? '—';
-    final deptName = (staff['departments']?['name'] as String?) ?? '—';
-    final role = (staff['role'] as String?) ?? 'staff';
-    final isActive = (staff['is_active'] as bool?) ?? true;
-    final lastSeen = PresenceService.parseLastSeen(staff['last_seen']);
-    final isOnline = PresenceService.isOnline(lastSeen);
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: () => _openDetail(staff),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(20),
-        decoration: AdminUi.panel(),
-        child: Row(
-          children: [
-            // Avatar with a presence dot in the bottom-right corner:
-            // green = app open now, grey = offline.
-            Stack(
-              children: [
-                CircleAvatar(
-                  radius: 24,
-                  backgroundColor: role == 'admin'
-                      ? Colors.red.withValues(alpha: 0.1)
-                      : const Color(0xFF002060).withValues(alpha: 0.1),
-                  child: Text(
-                    name.isNotEmpty ? name.substring(0, 1).toUpperCase() : '?',
-                    style: TextStyle(
-                      color: role == 'admin'
-                          ? Colors.red
-                          : const Color(0xFF002060),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                ),
-                Positioned(
-                  right: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: 14,
-                    height: 14,
-                    decoration: BoxDecoration(
-                      color: isOnline ? Colors.green : Colors.grey[400],
-                      shape: BoxShape.circle,
-                      // White ring keeps the dot readable over the avatar.
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          name,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      if (role == 'admin')
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.red.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Text(
-                            'ADMIN',
-                            style: TextStyle(color: Colors.red, fontSize: 9),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Nombor Gaji: $staffNum',
-                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '$position · $grade · $employmentStatus',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 11),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    deptName,
-                    style: TextStyle(color: Colors.grey[600], fontSize: 11),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.circle,
-                        size: 8,
-                        color: isActive ? Colors.green : Colors.grey,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        isActive ? 'Active' : 'Inactive',
-                        style: TextStyle(
-                          color: isActive ? Colors.green : Colors.grey,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  // Presence line — employment status (above) and online
-                  // status (here) are deliberately separate things.
-                  Text(
-                    isOnline
-                        ? '● ${_presenceLabel(lastSeen)}'
-                        : '○ ${_presenceLabel(lastSeen)}',
-                    style: TextStyle(
-                      color: isOnline ? Colors.green : Colors.grey[500],
-                      fontSize: 11,
-                      fontWeight: isOnline
-                          ? FontWeight.bold
-                          : FontWeight.normal,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right, color: Colors.grey),
-          ],
-        ),
-      ),
+    return StaffDirectoryCard(
+      staff: staff,
+      onView: () => _openDetail(staff),
+      onEdit: () => _openEdit(staff),
+      onPrint: () => StaffReportPreview.show(context, staff),
     );
   }
 
@@ -933,13 +693,11 @@ class _StaffDirectoryScreenState extends State<StaffDirectoryScreen> {
       );
       return;
     }
-    final result = await Navigator.push<_ToastResult>(
+    final result = await _managementDialog(
       context,
-      MaterialPageRoute(
-        builder: (context) =>
-            StaffFormScreen(departments: _departments, isEdit: false),
-      ),
+      StaffFormScreen(departments: _departments, isEdit: false, embedded: true),
     );
+    if (!mounted) return;
     await _loadData();
     if (result != null && mounted) {
       _showToast(result.message, success: result.success);
@@ -947,14 +705,33 @@ class _StaffDirectoryScreenState extends State<StaffDirectoryScreen> {
   }
 
   // ── STAFF DETAIL PROFILE ────────────────────────────────────────────
-  Future<void> _openDetail(Map<String, dynamic> staff) async {
-    final result = await Navigator.push<_ToastResult>(
+  Future<void> _openEdit(Map<String, dynamic> staff) async {
+    final result = await _managementDialog(
       context,
-      MaterialPageRoute(
-        builder: (context) =>
-            StaffDetailScreen(staff: staff, departments: _departments),
+      StaffFormScreen(
+        departments: _departments,
+        isEdit: true,
+        existingStaff: staff,
+        embedded: true,
       ),
     );
+    if (!mounted) return;
+    if (result != null) {
+      await _loadData();
+      if (mounted) _showToast(result.message, success: result.success);
+    }
+  }
+
+  Future<void> _openDetail(Map<String, dynamic> staff) async {
+    final result = await _managementDialog(
+      context,
+      StaffDetailScreen(
+        staff: staff,
+        departments: _departments,
+        embedded: true,
+      ),
+    );
+    if (!mounted) return;
     await _loadData();
     if (result != null && mounted) {
       _showToast(result.message, success: result.success);
@@ -970,10 +747,40 @@ class _ToastResult {
   const _ToastResult(this.message, this.success);
 }
 
+Future<_ToastResult?> _managementDialog(BuildContext context, Widget child) =>
+    showDialog<_ToastResult>(
+      context: context,
+      builder: (context) => Dialog(
+        clipBehavior: Clip.antiAlias,
+        insetPadding: const EdgeInsets.all(20),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: 640,
+            maxHeight: MediaQuery.sizeOf(context).height * 0.9,
+          ),
+          child: Stack(
+            children: [
+              child,
+              Positioned(
+                top: 8,
+                right: 8,
+                child: IconButton(
+                  tooltip: 'Close',
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
 // =====================================================================
 // STAFF DETAIL PROFILE SCREEN
 // =====================================================================
 class StaffDetailScreen extends StatefulWidget {
+  final bool embedded;
   final Map<String, dynamic> staff;
   final List<Map<String, dynamic>> departments;
 
@@ -981,6 +788,7 @@ class StaffDetailScreen extends StatefulWidget {
     super.key,
     required this.staff,
     required this.departments,
+    this.embedded = false,
   });
 
   @override
@@ -1018,14 +826,13 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
   /// successfully it pops BOTH screens back to the directory, carrying
   /// the toast result so the directory can show it.
   Future<void> _openEditFromDetail() async {
-    final result = await Navigator.push<_ToastResult>(
+    final result = await _managementDialog(
       context,
-      MaterialPageRoute(
-        builder: (context) => StaffFormScreen(
-          departments: widget.departments,
-          isEdit: true,
-          existingStaff: widget.staff,
-        ),
+      StaffFormScreen(
+        departments: widget.departments,
+        isEdit: true,
+        existingStaff: widget.staff,
+        embedded: true,
       ),
     );
     // Pop this detail screen too — but only if something actually
@@ -1063,7 +870,7 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
       ),
     );
 
-    if (confirmed != true) return;
+    if (confirmed != true || !mounted) return;
 
     setState(() => _isDeleting = true);
     try {
@@ -1103,6 +910,7 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
 
     return AdminPage(
       title: 'Staff profile',
+      embedded: widget.embedded,
       subtitle: 'Account details, attendance and access for $name.',
       maxWidth: 900,
       body: _isDeleting
@@ -1414,6 +1222,7 @@ class _StaffDetailScreenState extends State<StaffDetailScreen> {
 // STAFF FORM SCREEN (Add / Edit)
 // =====================================================================
 class StaffFormScreen extends StatefulWidget {
+  final bool embedded;
   final List<Map<String, dynamic>> departments;
   final bool isEdit;
   final Map<String, dynamic>? existingStaff;
@@ -1423,6 +1232,7 @@ class StaffFormScreen extends StatefulWidget {
     required this.departments,
     required this.isEdit,
     this.existingStaff,
+    this.embedded = false,
   });
 
   @override
@@ -1768,6 +1578,7 @@ class _StaffFormScreenState extends State<StaffFormScreen> {
 
     return AdminPage(
       title: widget.isEdit ? 'Edit staff member' : 'Add staff member',
+      embedded: widget.embedded,
       subtitle: widget.isEdit
           ? 'Keep profile information and account access up to date.'
           : 'Create a profile and welcome a new member to your team.',
@@ -1869,6 +1680,7 @@ class _StaffFormScreenState extends State<StaffFormScreen> {
 
                   // ── Gred Gaji dropdown ──
                   DropdownButtonFormField<String>(
+                    key: ValueKey(_selectedPosition),
                     initialValue: _gradesForPosition.contains(_selectedGrade)
                         ? _selectedGrade
                         : null,

@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
+import '../../theme/app_theme.dart';
 
 /// One destination in the bottom nav.
 class NavTabItem {
@@ -8,11 +8,7 @@ class NavTabItem {
   final IconData? activeIcon;
   final String label;
 
-  const NavTabItem({
-    required this.icon,
-    required this.label,
-    this.activeIcon,
-  });
+  const NavTabItem({required this.icon, required this.label, this.activeIcon});
 }
 
 /// A horizontally-scrollable, animated bottom navigation bar.
@@ -55,7 +51,8 @@ class _ScrollableBottomNavState extends State<ScrollableBottomNav> {
 
   void _scrollToSelected() {
     if (!_controller.hasClients) return;
-    final target = (_itemWidth * widget.currentIndex) -
+    final target =
+        (_itemWidth * widget.currentIndex) -
         (_controller.position.viewportDimension / 2) +
         (_itemWidth / 2);
     _controller.animateTo(
@@ -80,87 +77,86 @@ class _ScrollableBottomNavState extends State<ScrollableBottomNav> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.82),
-        border: const Border(
-          top: BorderSide(color: Color(0xFFEAEDF5), width: 1),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.navy.withValues(alpha: 0.08),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.82),
+            border: const Border(
+              top: BorderSide(color: Color(0xFFEAEDF5), width: 1),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.navy.withValues(alpha: 0.08),
+                blurRadius: 20,
+                offset: const Offset(0, -4),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 68,
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final tabs = List<Widget>.generate(widget.items.length, (index) {
-                final item = widget.items[index];
-                final selected = index == widget.currentIndex;
-                return _NavTab(
-                  width: _itemWidth,
-                  item: item,
-                  selected: selected,
-                  onTap: () => widget.onTap(index),
-                );
-              });
+          child: SafeArea(
+            top: false,
+            child: SizedBox(
+              height: 68,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final tabs = List<Widget>.generate(widget.items.length, (
+                    index,
+                  ) {
+                    final item = widget.items[index];
+                    final selected = index == widget.currentIndex;
+                    return _NavTab(
+                      width: _itemWidth,
+                      item: item,
+                      selected: selected,
+                      onTap: () => widget.onTap(index),
+                    );
+                  });
 
-              final totalWidth = _itemWidth * widget.items.length;
-              final fitsOnScreen = totalWidth <= constraints.maxWidth;
+                  final totalWidth = _itemWidth * widget.items.length;
+                  final fitsOnScreen = totalWidth <= constraints.maxWidth;
 
-              // Enough room for every tab — center them as a plain row
-              // instead of a left-aligned scroll view.
-              if (fitsOnScreen) {
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: tabs,
-                );
-              }
+                  // Enough room for every tab — center them as a plain row
+                  // instead of a left-aligned scroll view.
+                  if (fitsOnScreen) {
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: tabs,
+                    );
+                  }
 
-              // Too many tabs to fit — fall back to the original
-              // horizontally-scrollable behaviour, with a fading edge on
-              // the right to hint there's more to see.
-              return Stack(
-                children: [
-                  ListView(
-                    controller: _controller,
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 6),
-                    children: tabs,
-                  ),
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    bottom: 0,
-                    width: 18,
-                    child: IgnorePointer(
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                            colors: [
-                              Color(0x00FFFFFF),
-                              Colors.white,
-                            ],
+                  // Too many tabs to fit — fall back to the original
+                  // horizontally-scrollable behaviour, with a fading edge on
+                  // the right to hint there's more to see.
+                  return Stack(
+                    children: [
+                      ListView(
+                        controller: _controller,
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        children: tabs,
+                      ),
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        bottom: 0,
+                        width: 18,
+                        child: IgnorePointer(
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                                colors: [Color(0x00FFFFFF), Colors.white],
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                ],
-              );
-            },
+                    ],
+                  );
+                },
+              ),
+            ),
           ),
         ),
-      ),
-    ),
       ),
     );
   }
@@ -209,13 +205,16 @@ class _NavTabState extends State<_NavTab> with SingleTickerProviderStateMixin {
                 curve: Curves.easeOutCubic,
                 padding: const EdgeInsets.all(9),
                 decoration: BoxDecoration(
-                  gradient: selected ? AppTheme.goldGradient : null,
+                  // Same indigo/violet wash as the hero header, so the
+                  // active tab reads as part of the same theme instead of
+                  // a separate gold accent bolted on underneath it.
+                  gradient: selected ? AppTheme.heroGradient : null,
                   color: selected ? null : Colors.transparent,
                   shape: BoxShape.circle,
                   boxShadow: selected
                       ? [
                           BoxShadow(
-                            color: AppTheme.goldDeep.withValues(alpha: 0.4),
+                            color: AppTheme.heroEnd.withValues(alpha: 0.35),
                             blurRadius: 16,
                             spreadRadius: 1,
                           ),
@@ -223,8 +222,10 @@ class _NavTabState extends State<_NavTab> with SingleTickerProviderStateMixin {
                       : [],
                 ),
                 child: Icon(
-                  selected ? (widget.item.activeIcon ?? widget.item.icon) : widget.item.icon,
-                  color: selected ? AppTheme.navy : AppTheme.textFaint,
+                  selected
+                      ? (widget.item.activeIcon ?? widget.item.icon)
+                      : widget.item.icon,
+                  color: selected ? Colors.white : AppTheme.textFaint,
                   size: 22,
                 ),
               ),
@@ -234,7 +235,7 @@ class _NavTabState extends State<_NavTab> with SingleTickerProviderStateMixin {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  color: selected ? AppTheme.navy : AppTheme.textFaint,
+                  color: selected ? AppTheme.heroEnd : AppTheme.textFaint,
                 ),
                 child: Text(
                   widget.item.label,
@@ -243,6 +244,8 @@ class _NavTabState extends State<_NavTab> with SingleTickerProviderStateMixin {
                 ),
               ),
               const SizedBox(height: 2),
+              // Gold kept as the sparing highlight underline, exactly the
+              // "occasional flourish" role AppTheme documents for it.
               AnimatedContainer(
                 duration: const Duration(milliseconds: 280),
                 height: 3,

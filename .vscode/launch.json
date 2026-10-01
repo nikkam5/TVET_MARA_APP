@@ -5,10 +5,8 @@
       "name": "TVET Staff App (Windows)",
       "request": "launch",
       "type": "dart",
-      "args": [
-        "--dart-define=SUPABASE_URL=https://qsvtnwvmkqionwhssdcd.supabase.co",
-        "--dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzdnRud3Zta3Fpb253aHNzZGNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4ODc1NjgsImV4cCI6MjEwMDQ2MzU2OH0.INPa06QwJ8ZRXAOxTpam8BflLNDrpzdjsl7uFihRmPI"
-      ]
+      "program": "lib/main.dart",
+      "deviceId": "windows"
     }
   ]
 }

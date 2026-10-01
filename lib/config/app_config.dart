@@ -12,20 +12,33 @@ import 'package:flutter/foundation.dart';
 class AppConfig {
   AppConfig._();
 
-  static const String supabaseUrl =
-      String.fromEnvironment('SUPABASE_URL', defaultValue: 'https://qsvtnwvmkqionwhssdcd.supabase.co');
-  static const String supabaseAnonKey =
-      String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzdnRud3Zta3Fpb253aHNzZGNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4ODc1NjgsImV4cCI6MjEwMDQ2MzU2OH0.INPa06QwJ8ZRXAOxTpam8BflLNDrpzdjsl7uFihRmPI');
+  static const String supabaseUrl = String.fromEnvironment(
+    'SUPABASE_URL',
+    defaultValue: 'https://qsvtnwvmkqionwhssdcd.supabase.co',
+  );
+  static const String supabaseAnonKey = String.fromEnvironment(
+    'SUPABASE_ANON_KEY',
+    defaultValue:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzdnRud3Zta3Fpb253aHNzZGNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4ODc1NjgsImV4cCI6MjEwMDQ2MzU2OH0.INPa06QwJ8ZRXAOxTpam8BflLNDrpzdjsl7uFihRmPI',
+  );
 
   // Firebase Web config (used by firebase_core on all platforms)
-  static const String firebaseApiKey =
-      String.fromEnvironment('FIREBASE_API_KEY', defaultValue: '');
-  static const String firebaseProjectId =
-      String.fromEnvironment('FIREBASE_PROJECT_ID', defaultValue: '');
-  static const String firebaseMessagingSenderId =
-      String.fromEnvironment('FIREBASE_MESSAGING_SENDER_ID', defaultValue: '');
-  static const String firebaseAppId =
-      String.fromEnvironment('FIREBASE_APP_ID', defaultValue: '');
+  static const String firebaseApiKey = String.fromEnvironment(
+    'FIREBASE_API_KEY',
+    defaultValue: '',
+  );
+  static const String firebaseProjectId = String.fromEnvironment(
+    'FIREBASE_PROJECT_ID',
+    defaultValue: '',
+  );
+  static const String firebaseMessagingSenderId = String.fromEnvironment(
+    'FIREBASE_MESSAGING_SENDER_ID',
+    defaultValue: '',
+  );
+  static const String firebaseAppId = String.fromEnvironment(
+    'FIREBASE_APP_ID',
+    defaultValue: '',
+  );
 
   static bool get isSupabaseConfigured =>
       supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;

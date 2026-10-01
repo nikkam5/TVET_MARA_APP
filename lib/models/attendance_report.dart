@@ -1,15 +1,24 @@
+import '../utils/malaysia_time.dart';
+
 class ReportPeriod {
   final DateTime start;
   final DateTime end;
 
   const ReportPeriod({required this.start, required this.end});
 
-  String get label =>
-      '${_month(start.month)} ${start.year} - '
-      '${_month(end.month)} ${end.year}';
+  String get label {
+    final semester =
+        start.day == 1 &&
+        (start.month == 1 || start.month == 7) &&
+        end == DateTime(start.year, start.month + 6, 0);
+    if (semester) {
+      return '${_month(start.month)} ${start.year} - ${_month(end.month)} ${end.year}';
+    }
+    return '${start.day} ${_month(start.month)} ${start.year} - ${end.day} ${_month(end.month)} ${end.year}';
+  }
 
   static List<ReportPeriod> recent({DateTime? now, int count = 4}) {
-    final date = now ?? DateTime.now();
+    final date = now ?? MalaysiaTime.now();
     var start = date.month <= 6
         ? DateTime(date.year, 1, 1)
         : DateTime(date.year, 7, 1);
@@ -108,20 +117,21 @@ class AttendanceReportCalculator {
     required DateTime periodEnd,
     DateTime? today,
   }) {
-    final now = _dateOnly(today ?? DateTime.now());
+    final now = _dateOnly(today ?? MalaysiaTime.now());
     var end = _dateOnly(periodEnd);
     if (end.isAfter(now)) end = now;
     var start = _dateOnly(periodStart);
     final createdAt = DateTime.tryParse(staff['created_at']?.toString() ?? '');
-    if (createdAt != null && _dateOnly(createdAt.toLocal()).isAfter(start)) {
-      start = _dateOnly(createdAt.toLocal());
+    if (createdAt != null &&
+        _dateOnly(MalaysiaTime.fromUtc(createdAt)).isAfter(start)) {
+      start = _dateOnly(MalaysiaTime.fromUtc(createdAt));
     }
 
     final attendanceByDate = <String, Map<String, dynamic>>{};
     for (final row in attendance) {
       final punchIn = DateTime.tryParse(row['punch_in']?.toString() ?? '');
       if (punchIn != null) {
-        attendanceByDate[_key(punchIn.toLocal())] = row;
+        attendanceByDate[_key(MalaysiaTime.fromUtc(punchIn))] = row;
       }
     }
 
@@ -135,7 +145,7 @@ class AttendanceReportCalculator {
       for (
         var day = _dateOnly(leaveStart);
         !day.isAfter(_dateOnly(leaveEnd));
-        day = day.add(const Duration(days: 1))
+        day = DateTime(day.year, day.month, day.day + 1)
       ) {
         approvedLeaveByDate[_key(day)] =
             leave['leave_type']?.toString() ?? 'Leave';
@@ -155,7 +165,7 @@ class AttendanceReportCalculator {
       for (
         var day = start;
         !day.isAfter(end);
-        day = day.add(const Duration(days: 1))
+        day = DateTime(day.year, day.month, day.day + 1)
       ) {
         if (!isWorkday(day)) continue;
         expected++;
@@ -166,14 +176,17 @@ class AttendanceReportCalculator {
         String status;
 
         if (row != null) {
-          punchIn = DateTime.tryParse(
-            row['punch_in']?.toString() ?? '',
-          )?.toLocal();
-          punchOut = DateTime.tryParse(
-            row['punch_out']?.toString() ?? '',
-          )?.toLocal();
-          if (punchOut == null) missingPunchOut++;
-          if (row['late_approved'] != true) {
+          punchIn = DateTime.tryParse(row['punch_in']?.toString() ?? '');
+          if (punchIn != null) punchIn = MalaysiaTime.fromUtc(punchIn);
+          punchOut = DateTime.tryParse(row['punch_out']?.toString() ?? '');
+          if (punchOut != null) punchOut = MalaysiaTime.fromUtc(punchOut);
+          if (row['status'] == 'absent') {
+            absent++;
+            status = 'Absent';
+          } else if (row['status'] == 'leave') {
+            approvedLeave++;
+            status = 'Approved leave';
+          } else if (row['late_approved'] != true) {
             pendingLate++;
             status = 'Pending late approval';
           } else if (row['status'] == 'late') {
@@ -182,6 +195,11 @@ class AttendanceReportCalculator {
           } else {
             present++;
             status = 'Present';
+          }
+          if (punchOut == null &&
+              row['status'] != 'absent' &&
+              row['status'] != 'leave') {
+            missingPunchOut++;
           }
         } else if (leaveType != null) {
           approvedLeave++;
@@ -197,7 +215,7 @@ class AttendanceReportCalculator {
             punchIn: punchIn,
             punchOut: punchOut,
             status: status,
-            leaveType: leaveType,
+            leaveType: status == 'Approved leave' ? leaveType : null,
           ),
         );
       }
