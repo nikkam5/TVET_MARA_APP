@@ -44,6 +44,44 @@ Sign in using an existing staff account’s registered **email address and passw
 The staff profile role determines which dashboard opens. Users who cannot access
 their account should contact their institution’s staff administrator.
 
+## Deploy to Netlify from GitHub
+
+The repository includes `netlify.toml` and `scripts/build_netlify.sh`.
+Netlify installs Flutter **3.44.8**, builds the website, and publishes
+**`build/web`**. The repository's `web/` folder contains source templates;
+it is not the deployable website.
+
+1. Commit and push the deployment files to your connected GitHub branch.
+2. In Netlify's build settings, use:
+
+   | Setting | Value |
+   | --- | --- |
+   | Base directory | `.` (repository root) |
+   | Package directory | Leave empty |
+   | Build command | `bash scripts/build_netlify.sh` |
+   | Publish directory | `build/web` |
+
+3. Trigger a new deploy. These settings are also declared in `netlify.toml`.
+4. Check the deploy log ends with `Netlify website is ready in build/web.`
+   The published files must include `index.html`, `flutter_bootstrap.js`,
+   `main.dart.js`, `assets/`, and `_redirects`.
+
+`web/_redirects` supplies Netlify's single-page-app fallback, so refreshing
+an app URL serves `index.html` instead of the Netlify 404 page. Existing
+JavaScript, images, and other files are served normally.
+
+The working Supabase defaults remain in `lib/config/app_config.dart`.
+Optional Netlify **build** environment variables `SUPABASE_URL` and
+`SUPABASE_ANON_KEY` override them. Use a public client key; server-only
+service-role keys belong in Supabase Edge Functions. Firebase's existing
+`FIREBASE_*` configuration variables are also supported if needed.
+
+To verify the deployment build locally in Git Bash:
+
+```sh
+FLUTTER_BIN=flutter bash scripts/build_netlify.sh
+```
+
 ## Project structure
 
 | Directory | Purpose |
@@ -61,6 +99,7 @@ their account should contact their institution’s staff administrator.
 | `test/screens/`, `test/widgets/` | Login and layout tests |
 | `test/integration/` | Mock-backend workflow tests |
 | `supabase/` | Database setup, repair SQL and account Edge Functions |
+| `scripts/`, `netlify.toml` | GitHub-connected Netlify build configuration |
 | `tvet_app_redisegine11/` | Git-ignored teammate UI reference |
 
 ## Verify changes

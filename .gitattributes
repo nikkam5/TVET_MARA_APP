@@ -1,0 +1,2 @@
+# Shell scripts must keep LF line endings on Windows and Netlify Linux.
+*.sh text eol=lf

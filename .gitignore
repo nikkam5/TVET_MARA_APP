@@ -33,6 +33,10 @@ migrate_working_dir/
 build/
 coverage/
 
+# Local/CI deployment tools
+.flutter-sdk/
+.netlify/
+
 # Sensitive / secrets - never push to GitHub
 .env
 .env.*
